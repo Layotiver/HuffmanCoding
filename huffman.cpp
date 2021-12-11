@@ -11,6 +11,7 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <string>
 using namespace std;
 
 struct node
@@ -27,9 +28,10 @@ char faddress[100]; //要压缩的文件地址
 char ch[114514];    //用于存储读入的字节
 int keynum;         //读入字节的种数
 int root;           //根节点的编号
-int huffman[256];   //各字节对应的二进制编码，转换成10进制用int存储
+//int huffman[256];   //各字节对应的huffman编码，转换成10进制用int存储
+string huffman[256]; //各字节对应的huffman编码
+int bitnum[256];     //各字节对应的huffman编码所需bit数
 
-ifstream fin(faddress, ios::binary);
 ofstream fout("zip.ch", ios::binary);
 
 bool cmp(node a, node b)
@@ -69,33 +71,35 @@ void buildtree()
     return;
 }
 
-void buildmap(int ndnum, int code)
+void buildmap(int ndnum, string code, int depth)
 {
-    memset(huffman,-1,sizeof(huffman));
     if (ndnum < keynum)
     {
-        huffman[nd[ndnum].c] = code;
+        huffman[nd[ndnum].c] = keynum == 1 ? "0" : code;
+        bitnum[nd[ndnum].c] = keynum == 1 ? 1 : depth;
         return;
     }
     //左子树为0，右子树为1
-    buildmap(nd[ndnum].left, code << 1);
-    buildmap(nd[ndnum].right, (code << 1) + 1);
+    buildmap(nd[ndnum].left, code + '0', depth + 1);
+    buildmap(nd[ndnum].right, code + '1', depth + 1);
     return;
 }
 
 void Read()
 {
+    ifstream fin1(faddress, ios::binary);
     int i;
     printf("Please enter the address of the file to be zipped\n");
     scanf("%s", faddress);
-    while (!fin.eof())
+    while (!fin1.eof())
     {
-        fin.read(ch, 114514);
-        for (i = 0; i < fin.gcount(); i++)
+        fin1.read(ch, 114514);
+        for (i = 0; i < fin1.gcount(); i++)
         {
             nd[ch[i]].cnt++;
         }
     }
+    fin1.close();
     return;
 }
 
@@ -115,34 +119,100 @@ void count()
 
 void Write(int a)
 {
+    if (a == 0) //a为0的时候，写入一个全为0的字节
+    {
+        fout.write((char *)&a, 1);
+        return;
+    }
     fout.write((char *)&a, sizeof((char *)&a));
-    return ;
+    return;
 }
 
-void Write_huffmap()
+void Write_str(string s)
 {
-    int i, x,y;
+    int i, j, x;
+    if (s.length() / 8)
+    {
+        for (i = 1; i <= 8 - s.length() % 8; i++)
+        {
+            s.insert(s.begin(), '0');
+        }
+    }
+    for (i = 0; i <= s.length(); i += 8)
+    {
+        x = 0;
+        for (j = 0; j <= 7; j++)
+        {
+            x <<= 1;
+            x |= s[i + j] - '0';
+        }
+        Write(x);
+    }
+    return;
+}
+
+void write_huffmap()
+{
+    //键值对存储方式：key(1byte)+值所用比特数(1byte)+值(n bytes)
+    int i, x, y;
 
     Write(keynum);
     for (i = 0; i <= 255; i++)
     {
-        if(huffman[i]!=-1)
+        if (huffman[i].length())
         {
             Write(i);
-            
-            x=huffman[i];
-            y=1;
-            while(x<256)
-            {
-                y++;
-                x>>=8;
-            }
-            Write(y);
-            
-
+            Write(bitnum[i]);
+            Write_str(huffman[i]);
         }
     }
-    return ;
+    return;
+}
+
+void write_filebit()
+{
+    int i, j;
+    int fbitcnt = 0; //计算整个文件的字节转换成huffman编码要多少比特
+    int x, y = 0;
+    ifstream fin2(faddress, ios::binary);
+    while (!fin2.eof())
+    {
+        fin2.read(ch, 114514);
+        for (i = 0; i < fin2.gcount(); i++)
+        {
+            fbitcnt += bitnum[ch[i]];
+        }
+    }
+    Write((8 - fbitcnt % 8) % 8); //文件末尾补0情况
+    fin2.close();
+
+    ifstream fin3(faddress, ios::binary);
+    while (!fin3.eof())
+    {
+        fin3.read(ch, 114514);
+        for (i = 0; i < fin3.gcount(); i++)
+        {
+            for (j = 0; j < huffman[ch[i]].length(); j++)
+            {
+                y++;
+                x <<= 1;
+                x |= huffman[ch[i]][j];
+                if (y == 8)
+                {
+                    Write(x);
+                    x = 0;
+                    y = 0;
+                }
+            }
+            if (y)
+            {
+                x <<= 8 - y;
+                Write(x);
+            }
+        }
+    }
+    fin3.close();
+    return;
 }
 
 int main()
@@ -156,9 +226,8 @@ int main()
     }*/
 
     buildtree();
-    buildmap(root, 0);
+    buildmap(root, "", 0);
 
-    fin.close();
     fout.close();
     return 0;
 }
