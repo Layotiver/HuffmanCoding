@@ -27,7 +27,8 @@ char faddress[100]; //要压缩的文件地址
 char ch[114514];    //用于存储读入的字节
 int keynum;         //读入字节的种数
 int root;           //根节点的编号
-int huffman[256];   //各字节对应的二进制编码，转换成10进制用int存储
+int huffman[256];   //各字节对应的huffman编码，转换成10进制用int存储
+int bytenum[256];   //各字节对应的huffman编码所需字节数
 
 ifstream fin(faddress, ios::binary);
 ofstream fout("zip.ch", ios::binary);
@@ -71,7 +72,6 @@ void buildtree()
 
 void buildmap(int ndnum, int code)
 {
-    memset(huffman, -1, sizeof(huffman));
     if (ndnum < keynum)
     {
         huffman[nd[ndnum].c] = code;
@@ -142,12 +142,13 @@ void Write_huffmap()
                 Write(1);
                 Write(0);
                 Write(0);
+                bytenum[i] = 1;
                 continue;
             }
 
             x = huffman[i];
             y = 0;
-            while (x > 256)
+            while (x > 127)
             {
                 y++;
                 x >>= 8;
@@ -155,17 +156,21 @@ void Write_huffmap()
             if (x) //x还有剩余，需要加一个字节，并在结尾补0
             {
                 Write(y + 1);
+                bytenum[i] = y + 1;
                 y = 8;
                 while (x)
                 {
                     y--;
                     x >>= 1;
                 }
+                Write(y);
                 Write(huffman[i] << y);
             }
             else
             {
                 Write(y);
+                bytenum[i] = y;
+                Write(0);
                 Write(huffman[i]);
             }
         }
@@ -175,6 +180,7 @@ void Write_huffmap()
 
 int main()
 {
+    memset(huffman, -1, sizeof(huffman));
     Read();
     count();
 
