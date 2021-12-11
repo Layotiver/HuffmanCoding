@@ -28,7 +28,7 @@ char ch[114514];    //用于存储读入的字节
 int keynum;         //读入字节的种数
 int root;           //根节点的编号
 int huffman[256];   //各字节对应的huffman编码，转换成10进制用int存储
-int bytenum[256];   //各字节对应的huffman编码所需字节数
+int bitnum[256];    //各字节对应的huffman编码所需bit数
 
 ifstream fin(faddress, ios::binary);
 ofstream fout("zip.ch", ios::binary);
@@ -124,7 +124,7 @@ void Write(int a)
     return;
 }
 
-void Write_huffmap()
+void write_huffmap()
 {
     //键值对存储方式：key(1byte)+值所用字节数(1byte)+补0情况(1byte)+值(n bytes)
     int i, x, y;
@@ -142,7 +142,6 @@ void Write_huffmap()
                 Write(1);
                 Write(0);
                 Write(0);
-                bytenum[i] = 1;
                 continue;
             }
 
@@ -156,7 +155,6 @@ void Write_huffmap()
             if (x) //x还有剩余，需要加一个字节，并在结尾补0
             {
                 Write(y + 1);
-                bytenum[i] = y + 1;
                 y = 8;
                 while (x)
                 {
@@ -169,13 +167,16 @@ void Write_huffmap()
             else
             {
                 Write(y);
-                bytenum[i] = y;
                 Write(0);
                 Write(huffman[i]);
             }
         }
     }
     return;
+}
+
+void write_filebit()
+{
 }
 
 int main()
