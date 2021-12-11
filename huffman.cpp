@@ -29,6 +29,9 @@ int keynum;         //读入字节的种数
 int root;           //根节点的编号
 int huffman[256];   //各字节对应的二进制编码，转换成10进制用int存储
 
+ifstream fin(faddress, ios::binary);
+ofstream fout("zip.ch", ios::binary);
+
 bool cmp(node a, node b)
 {
     return a.cnt > b.cnt;
@@ -37,7 +40,7 @@ bool cmp(node a, node b)
 void buildtree()
 {
     priority_queue<node> q;
-    int i, p = keynum-1;
+    int i, p = keynum - 1;
     node a, b;
 
     for (i = 1; i <= keynum; i++)
@@ -68,6 +71,7 @@ void buildtree()
 
 void buildmap(int ndnum, int code)
 {
+    memset(huffman, -1, sizeof(huffman));
     if (ndnum < keynum)
     {
         huffman[nd[ndnum].c] = code;
@@ -79,20 +83,25 @@ void buildmap(int ndnum, int code)
     return;
 }
 
-int main()
+void Read()
 {
     int i;
     printf("Please enter the address of the file to be zipped\n");
     scanf("%s", faddress);
-    ifstream fin(faddress, ios::binary);
     while (!fin.eof())
     {
         fin.read(ch, 114514);
-        for (i = 1; i <= fin.gcount(); i++)
+        for (i = 0; i < fin.gcount(); i++)
         {
             nd[ch[i]].cnt++;
         }
     }
+    return;
+}
+
+void count()
+{
+    int i;
     for (i = 0; i <= 255; i++)
     {
         if (nd[i].cnt)
@@ -102,6 +111,72 @@ int main()
         }
     }
     sort(nd, nd + keynum, cmp);
+}
+
+void Write(int a)
+{
+    if (a == 0) //a为0的时候，写入一个全为0的字节
+    {
+        fout.write((char *)&a, 1);
+        return;
+    }
+    fout.write((char *)&a, sizeof((char *)&a));
+    return;
+}
+
+void Write_huffmap()
+{
+    //键值对存储方式：key(1byte)+值所用字节数(1byte)+补0情况(1byte)+值(n bytes)
+    int i, x, y;
+
+    Write(keynum);
+    for (i = 0; i <= 255; i++)
+    {
+        if (huffman[i] != -1)
+        {
+            Write(i);
+
+            //huffman编码为0（最左叶子节点），用特判
+            if (huffman[i] == 0)
+            {
+                Write(1);
+                Write(0);
+                Write(0);
+                continue;
+            }
+
+            x = huffman[i];
+            y = 0;
+            while (x > 256)
+            {
+                y++;
+                x >>= 8;
+            }
+            if (x) //x还有剩余，需要加一个字节，并在结尾补0
+            {
+                Write(y + 1);
+                y = 8;
+                while (x)
+                {
+                    y--;
+                    x >>= 1;
+                }
+                Write(huffman[i] << y);
+            }
+            else
+            {
+                Write(y);
+                Write(huffman[i]);
+            }
+        }
+    }
+    return;
+}
+
+int main()
+{
+    Read();
+    count();
 
     /*for(i=0;i<=keynum;i++)
     {
@@ -112,5 +187,6 @@ int main()
     buildmap(root, 0);
 
     fin.close();
+    fout.close();
     return 0;
 }
