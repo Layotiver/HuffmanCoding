@@ -47,7 +47,7 @@ void readname()
     char x;
     int y = 0;
     fin.read(&keynum, 1);
-    for (i = 1; i <= keynum + 1; i++)
+    for (i = 1; i <= keynum; i++)
     {
         fin.read(&key, 1);
         fin.read(&bitnum, 1);
