@@ -128,6 +128,23 @@ void Write(int a)
     return;
 }
 
+void write_filename()
+{
+    int i, len;
+    for (i = strlen(faddress) - 1; i >= 0; i--)
+    {
+        if (faddress[i] == '/')
+            break;
+    }
+    len = strlen(faddress) - i - 1;
+    Write(len);
+    for (i = strlen(faddress) - len; i <= strlen(faddress) - 1; i++)
+    {
+        Write(faddress[i]);
+    }
+    return;
+}
+
 void Write_str(string s)
 {
     int i, j, x;
