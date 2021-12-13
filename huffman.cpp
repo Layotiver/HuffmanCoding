@@ -237,13 +237,12 @@ int main()
     Read();
     count();
 
-    /*for(i=0;i<=keynum;i++)
-    {
-        printf("%d\n",nd[i].cnt);
-    }*/
-
     buildtree();
     buildmap(root, "", 0);
+
+    write_filename();
+    write_huffmap();
+    write_filebit();
 
     fout.close();
     return 0;
