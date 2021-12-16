@@ -28,7 +28,6 @@ char faddress[100]; //要压缩的文件地址
 char ch[114514];    //用于存储读入的字节
 int keynum;         //读入字节的种数
 int root;           //根节点的编号
-//int huffman[256];   //各字节对应的huffman编码，转换成10进制用int存储
 string huffman[256]; //各字节对应的huffman编码
 int bitnum[256];     //各字节对应的huffman编码所需bit数
 
@@ -128,6 +127,23 @@ void Write(int a)
     return;
 }
 
+void write_filename()
+{
+    int i, len;
+    for (i = strlen(faddress) - 1; i >= 0; i--)
+    {
+        if (faddress[i] == '/')
+            break;
+    }
+    len = strlen(faddress) - i - 1;
+    Write(len);
+    for (i = strlen(faddress) - len; i <= strlen(faddress) - 1; i++)
+    {
+        Write(faddress[i]);
+    }
+    return;
+}
+
 void Write_str(string s)
 {
     int i, j, x;
@@ -220,13 +236,12 @@ int main()
     Read();
     count();
 
-    /*for(i=0;i<=keynum;i++)
-    {
-        printf("%d\n",nd[i].cnt);
-    }*/
-
     buildtree();
     buildmap(root, "", 0);
+
+    write_filename();
+    write_huffmap();
+    write_filebit();
 
     fout.close();
     return 0;
