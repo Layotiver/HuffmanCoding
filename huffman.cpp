@@ -18,16 +18,15 @@ struct node
 {
     char c;
     int cnt, left, right, number;
-    bool operator<(const node &b)
-    {
-        return cnt < b.cnt;
+    bool operator <(const node b) const{
+        return cnt>b.cnt;
     }
 } nd[610]; //in fact, 512 is enough
 
-char faddress[100]; //要压缩的文件地址
-char ch[114514];    //用于存储读入的字节
-int keynum;         //读入字节的种数
-int root;           //根节点的编号
+char faddress[100];  //要压缩的文件地址
+char ch[114514];     //用于存储读入的字节
+int keynum;          //读入字节的种数
+int root;            //根节点的编号
 string huffman[256]; //各字节对应的huffman编码
 int bitnum[256];     //各字节对应的huffman编码所需bit数
 
@@ -44,10 +43,10 @@ void buildtree()
     int i, p = keynum - 1;
     node a, b;
 
-    for (i = 1; i <= keynum; i++)
+    for (i = 0; i < keynum; i++)
     {
-        q.push(nd[i]);
         nd[i].number = i;
+        q.push(nd[i]);
     }
     while (1)
     {
@@ -62,9 +61,10 @@ void buildtree()
         b = q.top();
         q.pop();
 
-        nd[p++].left = a.number;
+        nd[++p].left = a.number;
         nd[p].right = b.number;
         nd[p].cnt = a.cnt + b.cnt;
+        nd[p].number=p;
         q.push(nd[p]);
     }
     return;
@@ -79,17 +79,29 @@ void buildmap(int ndnum, string code, int depth)
         return;
     }
     //左子树为0，右子树为1
-    buildmap(nd[ndnum].left, code + '0', depth + 1);
-    buildmap(nd[ndnum].right, code + '1', depth + 1);
+    buildmap(nd[ndnum].left, code + "0", depth + 1);
+    buildmap(nd[ndnum].right, code + "1", depth + 1);
     return;
+}
+
+void printmap()
+{
+    int i;
+    for(i=0;i<keynum;i++)
+    {
+        printf("%c ",nd[i].c);
+        printf("%s",huffman[nd[i].c].c_str());
+        printf("\n");
+    }
+    return ;
 }
 
 void Read()
 {
-    ifstream fin1(faddress, ios::binary);
     int i;
     printf("Please enter the address of the file to be zipped\n");
     scanf("%s", faddress);
+    ifstream fin1(faddress, ios::binary);
     while (!fin1.eof())
     {
         fin1.read(ch, 114514);
@@ -113,7 +125,12 @@ void count()
             keynum++;
         }
     }
-    sort(nd, nd + keynum, cmp);
+    sort(nd, nd + 256, cmp);
+    /*for (i = 0; i < keynum; i++)
+    {
+        printf("%c %d\n", nd[i].c, nd[i].cnt);
+    }*/
+    return;
 }
 
 void Write(int a)
@@ -238,10 +255,11 @@ int main()
 
     buildtree();
     buildmap(root, "", 0);
+    printmap();
 
-    write_filename();
-    write_huffmap();
-    write_filebit();
+    //write_filename();
+    //write_huffmap();
+    //write_filebit();
 
     fout.close();
     return 0;
