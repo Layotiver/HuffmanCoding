@@ -70,6 +70,11 @@ void buildtree()
     return;
 }
 
+void printtree(int ndnum,int depth)
+{
+    
+}
+
 void buildmap(int ndnum, string code, int depth)
 {
     if (ndnum < keynum)
@@ -99,7 +104,7 @@ void printmap()
 void Read()
 {
     int i;
-    printf("Please enter the address of the file to be zipped\n");
+    printf("Please input the address of the file to be zipped\n");
     scanf("%s", faddress);
     ifstream fin1(faddress, ios::binary);
     while (!fin1.eof())
